@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Failure Risk Demo</title>
+    <style>
+        :root {
+            --bg: #edf6f7;
+            --panel: #ffffff;
+            --ink: #12303b;
+            --muted: #5c7480;
+            --accent: #0f766e;
+            --accent-dark: #0b5d57;
+            --line: #d7e7ea;
+            --soft: #f4fbfb;
+            --bubble: #e6f4f2;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, #d7f0ee 0, transparent 28%),
+                radial-gradient(circle at bottom right, #dbeafe 0, transparent 30%),
+                var(--bg);
+        }
+
+        .page {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }
+
+        .hero {
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            margin: 0 0 8px;
+            font-size: 2.4rem;
+            line-height: 1.05;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.4fr 0.9fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 10px 30px rgba(31, 41, 51, 0.08);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.92rem;
+            margin-bottom: 6px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #bfd8dd;
+            background: var(--soft);
+            font: inherit;
+        }
+
+        input:focus,
+        select:focus {
+            outline: 2px solid rgba(15, 118, 110, 0.18);
+            border-color: var(--accent);
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        button {
+            margin-top: 18px;
+            width: 100%;
+            border: 0;
+            border-radius: 12px;
+            padding: 13px 16px;
+            background: var(--accent);
+            color: white;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: var(--accent-dark);
+        }
+
+        .result {
+            font-size: 2.1rem;
+            font-weight: 700;
+            margin: 8px 0 6px;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: var(--bubble);
+            color: var(--ink);
+            font-size: 0.9rem;
+        }
+
+        .about-bubble {
+            margin-top: 22px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: var(--bubble);
+            border: 1px solid #c5e6e1;
+        }
+
+        .about-bubble strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+
+        .error {
+            margin-top: 12px;
+            color: #8a1c1c;
+            font-weight: 700;
+        }
+
+        .meta {
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 0.96rem;
+        }
+
+        @media (max-width: 800px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <section class="hero">
+            <h1>Heart Failure Risk Demo</h1>
+            <p>Enter patient values below to estimate the probability of a death event using a logistic regression model.</p>
+        </section>
+
+        <div class="grid">
+            <section class="card">
+                <h2>Patient Input</h2>
+                <form method="post">
+                    <div class="form-grid">
+                        <div>
+                            <label for="age">Age</label>
+                            <input id="age" name="age" type="number" step="0.1" value="{{ patient.age }}" required>
+                        </div>
+                        <div>
+                            <label for="ejection_fraction">Ejection Fraction</label>
+                            <input id="ejection_fraction" name="ejection_fraction" type="number" step="0.1" value="{{ patient.ejection_fraction }}" required>
+                        </div>
+                        <div>
+                            <label for="creatinine_phosphokinase">Creatinine Phosphokinase</label>
+                            <input id="creatinine_phosphokinase" name="creatinine_phosphokinase" type="number" step="0.1" value="{{ patient.creatinine_phosphokinase }}" required>
+                        </div>
+                        <div>
+                            <label for="platelets">Platelets</label>
+                            <input id="platelets" name="platelets" type="number" step="0.1" value="{{ patient.platelets }}" required>
+                        </div>
+                        <div>
+                            <label for="serum_creatinine">Serum Creatinine</label>
+                            <input id="serum_creatinine" name="serum_creatinine" type="number" step="0.1" value="{{ patient.serum_creatinine }}" required>
+                        </div>
+                        <div>
+                            <label for="serum_sodium">Serum Sodium</label>
+                            <input id="serum_sodium" name="serum_sodium" type="number" step="0.1" value="{{ patient.serum_sodium }}" required>
+                        </div>
+                        <div>
+                            <label for="time">Follow-Up Time</label>
+                            <input id="time" name="time" type="number" step="0.1" value="{{ patient.time }}" required>
+                        </div>
+                        <div>
+                            <label for="anaemia">Anaemia</label>
+                            <select id="anaemia" name="anaemia">
+                                <option value="0" {% if patient.anaemia == 0 %}selected{% endif %}>No</option>
+                                <option value="1" {% if patient.anaemia == 1 %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="diabetes">Diabetes</label>
+                            <select id="diabetes" name="diabetes">
+                                <option value="0" {% if patient.diabetes == 0 %}selected{% endif %}>No</option>
+                                <option value="1" {% if patient.diabetes == 1 %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="high_blood_pressure">High Blood Pressure</label>
+                            <select id="high_blood_pressure" name="high_blood_pressure">
+                                <option value="0" {% if patient.high_blood_pressure == 0 %}selected{% endif %}>No</option>
+                                <option value="1" {% if patient.high_blood_pressure == 1 %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="sex">Sex</label>
+                            <select id="sex" name="sex">
+                                <option value="0" {% if patient.sex == 0 %}selected{% endif %}>Female</option>
+                                <option value="1" {% if patient.sex == 1 %}selected{% endif %}>Male</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="smoking">Smoking</label>
+                            <select id="smoking" name="smoking">
+                                <option value="0" {% if patient.smoking == 0 %}selected{% endif %}>No</option>
+                                <option value="1" {% if patient.smoking == 1 %}selected{% endif %}>Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit">Predict Probability</button>
+                    {% if error %}
+                    <div class="error">{{ error }}</div>
+                    {% endif %}
+                </form>
+            </section>
+
+            <aside class="card">
+                <h2>Prediction Output</h2>
+                {% if probability is not none %}
+                <div class="result">{{ "%.2f"|format(probability * 100) }}%</div>
+                <p class="pill">Predicted class: {{ prediction }}</p>
+                <p class="meta">This is the estimated probability of a death event for the entered patient profile.</p>
+                {% else %}
+                <div class="result">Ready</div>
+                <p class="meta">Submit the form to generate a prediction.</p>
+                {% endif %}
+            </aside>
+        </div>
+    </div>
+</body>
+</html>
