@@ -156,6 +156,12 @@
             font-weight: 700;
         }
 
+        .warning-list {
+            margin: 14px 0 0;
+            padding-left: 18px;
+            color: #8a6b1f;
+        }
+
         .meta {
             color: var(--muted);
             line-height: 1.6;
@@ -266,6 +272,13 @@
                 {% else %}
                 <div class="result">Ready</div>
                 <p class="meta">Submit the form to generate a prediction.</p>
+                {% endif %}
+                {% if warnings %}
+                <ul class="warning-list">
+                    {% for warning in warnings %}
+                    <li>{{ warning }}</li>
+                    {% endfor %}
+                </ul>
                 {% endif %}
             </aside>
         </div>

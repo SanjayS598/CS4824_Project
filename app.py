@@ -9,6 +9,7 @@ DATA_PATH = Path("data/heart_failure_clinical_records_5000.csv")
 
 
 def train_test_split_from_scratch(X, y, test_size=0.2, random_state=42):
+    # Keep the split reproducible so notebook and app results stay aligned.
     rng = np.random.default_rng(random_state)
     indices = np.arange(X.shape[0])
     rng.shuffle(indices)
@@ -19,12 +20,14 @@ def train_test_split_from_scratch(X, y, test_size=0.2, random_state=42):
 
 
 def fit_standardizer(train_df, columns):
+    # Store the scaling values from the training data.
     means = train_df[columns].mean()
     stds = train_df[columns].std(ddof=0).replace(0, 1.0)
     return means, stds
 
 
 def apply_standardizer(frame, columns, means, stds):
+    # Reuse the training-set statistics for test rows and new patient inputs.
     transformed = frame.copy()
     transformed[columns] = (transformed[columns] - means) / stds
     return transformed
@@ -39,10 +42,12 @@ class LogisticRegression:
 
     @staticmethod
     def sigmoid(z):
+        # Clip extreme values so the exponential stays numerically stable.
         z = np.clip(z, -500, 500)
         return 1.0 / (1.0 + np.exp(-z))
 
     def fit(self, X, y):
+        # Train the weights with gradient descent.
         n_samples, n_features = X.shape
         self.weights = np.zeros(n_features, dtype=float)
         self.bias = 0.0
@@ -63,6 +68,7 @@ class LogisticRegression:
 
 
 def load_model_artifacts():
+    # Train the same tuned model once when the app starts.
     df = pd.read_csv(DATA_PATH)
     clean_df = df.drop_duplicates().copy()
     if clean_df.isnull().sum().sum() > 0:
@@ -103,6 +109,8 @@ def load_model_artifacts():
         "continuous_features": continuous_features,
         "train_means": train_means,
         "train_stds": train_stds,
+        "feature_mins": clean_df[feature_columns].min(),
+        "feature_maxs": clean_df[feature_columns].max(),
         "model": model,
         "raw_rows": len(df),
         "clean_rows": len(clean_df),
@@ -127,7 +135,40 @@ DEFAULT_PATIENT = {
 }
 
 
+def validate_patient_input(patient_dict):
+    # Catch invalid values and flag inputs that fall outside the training data range.
+    errors = []
+    warnings = []
+    binary_features = {
+        "anaemia",
+        "diabetes",
+        "high_blood_pressure",
+        "sex",
+        "smoking",
+    }
+
+    for feature in binary_features:
+        if patient_dict[feature] not in (0, 1):
+            errors.append(f"{feature} must be 0 or 1.")
+
+    for feature, value in patient_dict.items():
+        if feature not in binary_features and value < 0:
+            errors.append(f"{feature} must be non-negative.")
+
+    feature_mins = MODEL_ARTIFACTS["feature_mins"]
+    feature_maxs = MODEL_ARTIFACTS["feature_maxs"]
+    for feature, value in patient_dict.items():
+        if value < feature_mins[feature] or value > feature_maxs[feature]:
+            warnings.append(
+                f"{feature} is outside the training data range "
+                f"({feature_mins[feature]:.2f} to {feature_maxs[feature]:.2f})."
+            )
+
+    return errors, warnings
+
+
 def prepare_single_patient(patient_dict):
+    # Build a one-row frame so the regular preprocessing pipeline can be reused.
     patient_df = pd.DataFrame([patient_dict], columns=MODEL_ARTIFACTS["feature_columns"])
     patient_df = apply_standardizer(
         patient_df,
@@ -139,6 +180,7 @@ def prepare_single_patient(patient_dict):
 
 
 def predict_patient_risk(patient_dict, threshold=0.5):
+    # Return both the raw probability and the thresholded class prediction.
     patient_array = prepare_single_patient(patient_dict)
     probability = float(MODEL_ARTIFACTS["model"].predict_proba(patient_array)[0])
     prediction = int(probability >= threshold)
@@ -150,10 +192,12 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    # Handle the input form and render the prediction result.
     patient = DEFAULT_PATIENT.copy()
     probability = None
     prediction = None
     error = None
+    warnings = []
 
     if request.method == "POST":
         try:
@@ -171,7 +215,11 @@ def index():
                 "smoking": int(request.form["smoking"]),
                 "time": float(request.form["time"]),
             }
-            probability, prediction = predict_patient_risk(patient)
+            errors, warnings = validate_patient_input(patient)
+            if errors:
+                error = " ".join(errors)
+            else:
+                probability, prediction = predict_patient_risk(patient)
         except (KeyError, ValueError):
             error = "Please enter valid numeric values for every field."
 
@@ -181,6 +229,7 @@ def index():
         probability=probability,
         prediction=prediction,
         error=error,
+        warnings=warnings,
         raw_rows=MODEL_ARTIFACTS["raw_rows"],
         clean_rows=MODEL_ARTIFACTS["clean_rows"],
     )
